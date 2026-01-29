@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artist Residencies & Grants Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        input, select {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #667eea;
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            background: #5568d3;
+        }
+
+        th.sortable::after {
+            content: ' ⇅';
+            opacity: 0.5;
+        }
+
+        th.sorted-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        th.sorted-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        td {
+            padding: 15px;
+            vertical-align: top;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .type-residency {
+            background: #e7f3ff;
+            color: #0066cc;
+        }
+
+        .type-grant {
+            background: #fff3e7;
+            color: #cc6600;
+        }
+
+        .type-both {
+            background: #f0e7ff;
+            color: #6600cc;
+        }
+
+        .type-mentorship {
+            background: #e7ffe7;
+            color: #00cc00;
+        }
+
+        .deadline-badge {
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .deadline-urgent {
+            background: #ffe7e7;
+            color: #cc0000;
+        }
+
+        .deadline-soon {
+            background: #fff3e7;
+            color: #cc6600;
+        }
+
+        .deadline-open {
+            background: #e7ffe7;
+            color: #00cc00;
+        }
+
+        .deadline-closed {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .filter-group {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Artist Residencies & Grants Database</h1>
+            <p class="subtitle">A curated collection of international opportunities for artists</p>
+        </header>
+
+        <div class="controls">
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label for="searchInput">🔍 Search</label>
+                    <input type="text" id="searchInput" placeholder="Search by program, location, or requirements...">
+                </div>
+                <div class="filter-item">
+                    <label for="regionFilter">📍 Filter by Region</label>
+                    <select id="regionFilter">
+                        <option value="">All Regions</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="typeFilter">🏷️ Filter by Type</label>
+                    <select id="typeFilter">
+                        <option value="">All Types</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Total Programs</div>
+                    <div class="stat-value" id="totalCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Visible Programs</div>
+                    <div class="stat-value" id="visibleCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Regions</div>
+                    <div class="stat-value" id="regionCount">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="residencyTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-column="0">Program Name</th>
+                        <th class="sortable" data-column="1">Organization</th>
+                        <th class="sortable" data-column="2">Region/Location</th>
+                        <th class="sortable" data-column="3">Type</th>
+                        <th class="sortable" data-column="4">Deadline</th>
+                        <th class="sortable" data-column="5">Duration</th>
+                        <th class="sortable" data-column="6">Grant Amount</th>
+                        <th>Requirements</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results" style="display: none;">
+                No residencies or grants match your search criteria.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const data = [
+            ["Villa Kujoyama","Institut français du Japon","Kyoto Japan","Residency","Opens Feb 3 2026, application limited to 250 submissions","4-6 months","Covered: housing + stipend","French citizens or based in France 5+ years; 17 disciplines including visual arts, music, dance, architecture, design, crafts","https://villakujoyama.jp/en/programme-de-residence-3/"],
+            ["Texas A&M New Work Development","School of Performance Visualization and Fine Arts","Texas USA","Residency","Deadline: Jan 30 2026","Aug 4 - Oct 4 2026 (2 months)","$10,000 USD stipend + on-campus lodging + facilities","Digital/New Media, Performing Arts, Visual Arts; international artists with visa support","https://pvfa.tamu.edu/faculty-research-and-creative-works/asir/new-work-development-artist-residency/"],
+            ["Villa Medici","French Academy in Rome","Rome Italy","Residency","Multiple open calls ongoing","Varies by program","Varies by program","French or international French-speaking artists, multiple disciplines including visual arts, art history, cooking, crafts, comic strip","https://villamedici.it/en/residencies/"],
+            ["Casa de Velázquez - Artistes en Résidence","Académie de France à Madrid","Madrid Spain","Residency","Oct 20 - Nov 28 2025 (CLOSED for 2026-2027)","11 months","€25,000 estimated","Artists with significant body of work, any nationality; must present project related to Iberian Peninsula; interview in French; disciplines: architecture, visual arts, video art, choreography, film, music composition, photography","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Valencia Grant","Ajuntament de València","Madrid Spain (for Valencia residents)","Residency","Annual call","Academic year (until July 31 following year)","€16,000","Residents of Valencia Community (Spain) for at least 1 year","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Santander Grant","Ayuntamiento de Santander","Madrid Spain (for Santander artists)","Residency","Open","10 months","Not specified","Born or residing in Santander","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Zaragoza Grant","Diputación Provincial de Zaragoza","Madrid Spain (for Zaragoza artists)","Residency","Closed for current cycle","11 months","€25,000","Visual artists born or residing in Zaragoza province, ages 18-40","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Málaga Grant","Ayuntamiento de Málaga","Madrid Spain (for Málaga artists)","Residency","Closed","10 months","€23,000","Visual artists born or residing in Málaga province","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Fundació Miró Mallorca","Fundació Miró Mallorca","Madrid Spain","Residency","Annual call","3 months (2 grants)","€4,000 each","Part of Premios y Becas Pilar Juncosa program","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Laine et Création","ADAGP & Mobilier National","Madrid Spain","Residency","Winter 2025-2026","3 months (two 1.5 month periods)","€6,000 + €2,000 for prototype","Visual arts, French scene (working/residing in France 5+ years or French nationality living abroad), mid-career (10+ years experience)","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Practice-led Research Arts PhD","EUR Arts et Humanités / Universidad Côte d'Azur","Madrid Spain","Residency (Doctoral)","Deadline: June 23 2025","3 years (with 6 months max at Casa)","Doctoral contract","Registered at French university, artistic creation thesis, focus on creativity","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - ENSAD Prize","École des Arts Décoratifs-PSL","Madrid Spain","Residency","Deadline: Oct 22 2025","2.5 months (Jan-Mar 2026)","€2,500","ENSAD Master 2 graduates 2025, all sectors","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Encura VIII","Hangar / CA2M / hablarenarte / AC/E","Barcelona & Madrid Spain","Residency (Curatorial research)","Deadline: June 30 2025","3 months (Nov 2025 - Feb 2026)","Not specified","Spanish or foreign curators/researchers residing in Spain","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Casa de Velázquez - Literary Creation","Festival Eñe & Cuadernos Hispanoamericanos - AECID","Madrid Spain","Residency","Annual call","3 months","€1,000/month","Writers from Latin America/Caribbean, writing in Spanish, published works","https://www.casadevelazquez.org/en/la-casa/artist-applications"],
+            ["Renoir Aujourd'hui","Association Renoir","Essoyes France (Champagne region)","Residency","Deadline: March 15 2024","2 months (Aug-Sep)","€6,000 TTC (incl. €1,000 rights cession)","Pictorial creation inspired by Renoir/Impressionism; mediation/pedagogy required; driver's license strongly advised","https://cipac.net/annonces/appels/residence-artistique-renoir-aujourd-hui"],
+            ["M³ Mutual Mentorship for Musicians","M³ Initiative","Various locations","Grant/Mentorship","Deadline: Jan 20 2026 (Cohort 9)","Varies","Commissions + mentorship","Women and gender-expansive musicians, mentorship program with commissions and anthologies","https://m3musicians.org/"],
+            ["DAAD Artists in Berlin","DAAD","Berlin Germany","Residency","Ongoing applications","Varies","Varies","Established artists; one of world's most respected artist-in-residence programs","https://www.daad.de/en/studying-in-germany/scholarships/music-art/"],
+            ["Schloss Balmoral","Künstlerhaus Schloss Balmoral","Bad Ems Germany","Residency","Ongoing applications","3 or 9 months","Residential scholarship","Fine artists from Germany and abroad","https://www.daad.de/en/studying-in-germany/scholarships/music-art/"],
+            ["Künstlerhaus Schöppingen","Künstlerdorf Schöppingen","Schöppingen Germany","Residency","Ongoing applications","Varies","Scholarship","Literature, fine arts, new media, interdisciplinary; German and international","https://www.daad.de/en/studying-in-germany/scholarships/music-art/"],
+            ["Künstlerhaus Lukas","Künstlerhaus Lukas","Germany","Residency","Ongoing applications","Varies","Residential scholarship","Fine art, literature, dance, composition","https://www.daad.de/en/studying-in-germany/scholarships/music-art/"],
+            ["Akademie Schloss Solitude","Akademie Schloss Solitude","Stuttgart Germany","Residency","Ongoing applications","Varies","Supported ~1400 young artists","International Artist-in-Residence, young artists","https://www.daad.de/en/studying-in-germany/scholarships/music-art/"],
+            ["Rijksakademie","Rijksakademie van beeldende kunsten","Amsterdam Netherlands","Residency","Jan 1 - Feb 1 2026 (for 2027)","1-2 years (Jan-Dec 2027, possible extension)","€19,800 stipend/year + €2,500 work budget/year + studio","All disciplines, finished BA/MA with 2-3 years independent practice; ~23 artists/year (11 Dutch, 12 international); €1,875 annual participation fee","https://rijksakademie.nl/en/residency-apply/apply"],
+            ["Es Far Cultural - Casa d'Artistes","FAR Cultural","Menorca Spain","Residency","Deadline: Feb 5 2026","20 days (May 4 - Jun 8, 2026)","€900 + travel + accommodation","Visual arts, performance, podcast, music, sound art; at least one from Balearic Islands; training component","https://casadartistes.esfarcultural.net/en/residencies-de-creacio-2026"],
+            ["Edeiken International Arts Foundation","EIAF / 7artscafe","Yokohama Japan","Residency","Deadline: March 1 2026","1 month","$10,000 USD (for airfare, housing, living, materials)","Musicians, composers, sound artists living/working outside Japan; age 25+, 5 years professional experience; ensembles up to 4 members; requires 4 public events + final concert","https://www.7artscafe.co.jp/eiaf/"]
+        ];
+
+        let sortColumn = -1;
+        let sortAscending = true;
+
+        function getTypeBadge(type) {
+            const typeMap = {
+                'Residency': 'type-residency',
+                'Grant': 'type-grant',
+                'Both': 'type-both',
+                'Grant/Mentorship': 'type-mentorship'
+            };
+            const className = typeMap[type] || 'type-residency';
+            return `<span class="type-badge ${className}">${type}</span>`;
+        }
+
+        function getDeadlineBadge(deadline) {
+            const lower = deadline.toLowerCase();
+            if (lower.includes('closed')) {
+                return `<span class="deadline-badge deadline-closed">${deadline}</span>`;
+            } else if (lower.includes('jan') || lower.includes('feb')) {
+                return `<span class="deadline-badge deadline-urgent">${deadline}</span>`;
+            } else if (lower.includes('march') || lower.includes('april') || lower.includes('may')) {
+                return `<span class="deadline-badge deadline-soon">${deadline}</span>`;
+            } else if (lower.includes('open') || lower.includes('ongoing')) {
+                return `<span class="deadline-badge deadline-open">${deadline}</span>`;
+            }
+            return deadline;
+        }
+
+        function renderTable(filteredData = data) {
+            const tbody = document.getElementById('tableBody');
+            const noResults = document.getElementById('noResults');
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '';
+                noResults.style.display = 'block';
+                document.getElementById('visibleCount').textContent = '0';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            tbody.innerHTML = filteredData.map(row => `
+                <tr>
+                    <td><strong>${row[0]}</strong></td>
+                    <td>${row[1]}</td>
+                    <td>${row[2]}</td>
+                    <td>${getTypeBadge(row[3])}</td>
+                    <td>${getDeadlineBadge(row[4])}</td>
+                    <td>${row[5]}</td>
+                    <td>${row[6]}</td>
+                    <td>${row[7]}</td>
+                    <td><a href="${row[8]}" target="_blank" class="link">Visit ↗</a></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('visibleCount').textContent = filteredData.length;
+        }
+
+        function populateFilters() {
+            const regions = new Set();
+            const types = new Set();
+
+            data.forEach(row => {
+                regions.add(row[2]);
+                types.add(row[3]);
+            });
+
+            const regionFilter = document.getElementById('regionFilter');
+            Array.from(regions).sort().forEach(region => {
+                const option = document.createElement('option');
+                option.value = region;
+                option.textContent = region;
+                regionFilter.appendChild(option);
+            });
+
+            const typeFilter = document.getElementById('typeFilter');
+            Array.from(types).sort().forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeFilter.appendChild(option);
+            });
+
+            document.getElementById('regionCount').textContent = regions.size;
+        }
+
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const regionFilter = document.getElementById('regionFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            let filtered = data;
+
+            if (searchTerm) {
+                filtered = filtered.filter(row => 
+                    row.some(cell => cell.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (regionFilter) {
+                filtered = filtered.filter(row => row[2] === regionFilter);
+            }
+
+            if (typeFilter) {
+                filtered = filtered.filter(row => row[3] === typeFilter);
+            }
+
+            if (sortColumn !== -1) {
+                filtered = [...filtered].sort((a, b) => {
+                    const aVal = a[sortColumn];
+                    const bVal = b[sortColumn];
+                    const comparison = aVal.localeCompare(bVal);
+                    return sortAscending ? comparison : -comparison;
+                });
+            }
+
+            renderTable(filtered);
+        }
+
+        function setupSorting() {
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const column = parseInt(th.dataset.column);
+                    
+                    if (sortColumn === column) {
+                        sortAscending = !sortAscending;
+                    } else {
+                        sortColumn = column;
+                        sortAscending = true;
+                    }
+
+                    document.querySelectorAll('th.sortable').forEach(header => {
+                        header.classList.remove('sorted-asc', 'sorted-desc');
+                    });
+
+                    th.classList.add(sortAscending ? 'sorted-asc' : 'sorted-desc');
+
+                    filterData();
+                });
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filterData);
+        document.getElementById('regionFilter').addEventListener('change', filterData);
+        document.getElementById('typeFilter').addEventListener('change', filterData);
+
+        document.getElementById('totalCount').textContent = data.length;
+        populateFilters();
+        renderTable();
+        setupSorting();
+    </script>
+</body>
+</html>
